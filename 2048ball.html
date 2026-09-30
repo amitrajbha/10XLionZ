@@ -1,0 +1,2471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no,
+               viewport-fit=cover">
+
+<title>Ball 2048</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,
+body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#F8F4FF;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+}
+
+body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.app{
+    width:100%;
+    max-width:520px;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    padding:
+        max(12px,env(safe-area-inset-top))
+        12px
+        max(10px,env(safe-area-inset-bottom));
+
+    color:#27233b;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.header{
+    height:70px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-shrink:0;
+}
+
+.logo{
+    font-size:30px;
+    font-weight:900;
+    letter-spacing:-1.5px;
+}
+
+.logo span{
+    color:#8b5cf6;
+}
+
+.scoreArea{
+    display:flex;
+    gap:7px;
+}
+
+.scoreBox{
+    min-width:72px;
+    padding:6px 10px;
+    border-radius:14px;
+    background:#ffffff;
+    box-shadow:
+        0 4px 14px rgba(65,45,110,.08);
+    text-align:center;
+}
+
+.scoreTitle{
+    font-size:9px;
+    font-weight:800;
+    color:#9690a9;
+    letter-spacing:.5px;
+}
+
+.score{
+    font-size:19px;
+    line-height:22px;
+    font-weight:900;
+}
+
+/* =========================
+   GAME AREA
+========================= */
+
+.gameWrap{
+    position:relative;
+    width:100%;
+    flex:1;
+    min-height:0;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+#gameCanvas{
+    display:block;
+    width:100%;
+    height:100%;
+
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+
+    border-radius:25px;
+}
+
+/* =========================
+   BOTTOM
+========================= */
+
+.bottom{
+    height:66px;
+    flex-shrink:0;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:8px 3px 0;
+}
+
+.nextBox{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.nextText{
+    font-size:10px;
+    font-weight:900;
+    color:#9b95ad;
+    letter-spacing:.5px;
+}
+
+#nextCanvas{
+    width:45px;
+    height:45px;
+}
+
+.newBtn{
+    border:none;
+    outline:none;
+
+    padding:11px 17px;
+
+    border-radius:13px;
+
+    background:#EBEBEC00;
+    color:white;
+
+    font-size:12px;
+    font-weight:900;
+
+    box-shadow:
+        0 5px 12px rgba(139,92,246,.25);
+
+    cursor:pointer;
+}
+
+.newBtn:active{
+    transform:scale(.96);
+}
+
+/* =========================
+   GAME OVER
+========================= */
+
+.overlay{
+    position:absolute;
+    inset:0;
+
+    border-radius:25px;
+
+    background:rgba(248,244,255,.90);
+    backdrop-filter:blur(5px);
+
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+
+    z-index:10;
+}
+
+.overlay.show{
+    display:flex;
+}
+
+.overTitle{
+    font-size:38px;
+    font-weight:950;
+    color:#29243d;
+    margin-bottom:4px;
+}
+
+.overScore{
+    color:#858096;
+    font-size:14px;
+    font-weight:700;
+    margin-bottom:18px;
+}
+
+.playAgain{
+    border:0;
+    background:#8b5cf6;
+    color:#fff;
+
+    padding:13px 23px;
+
+    border-radius:13px;
+
+    font-size:13px;
+    font-weight:900;
+
+    box-shadow:
+        0 6px 16px rgba(139,92,246,.25);
+}
+
+/* =========================
+   SMALL DEVICES
+========================= */
+
+@media(max-height:650px){
+
+    .header{
+        height:58px;
+    }
+
+    .logo{
+        font-size:27px;
+    }
+
+    .bottom{
+        height:54px;
+    }
+
+}
+
+@media(max-width:360px){
+
+    .scoreBox{
+        min-width:63px;
+    }
+
+    .logo{
+        font-size:27px;
+    }
+
+}
+</style>
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <div class="header">
+
+        <div class="logo">
+            Ball<span>2048</span>
+        </div>
+
+        <div class="scoreArea">
+
+            <div class="scoreBox">
+                <div class="scoreTitle">SCORE</div>
+                <div class="score" id="score">0</div>
+            </div>
+
+            <div class="scoreBox">
+                <div class="scoreTitle">BEST</div>
+                <div class="score" id="best">0</div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="gameWrap">
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="overlay" id="gameOver">
+
+            <div class="overTitle">
+                Game Over
+            </div>
+
+            <div class="overScore">
+                Score: <span id="finalScore">0</span>
+            </div>
+
+            <button class="playAgain"
+                    onclick="restartGame()">
+                PLAY AGAIN
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="bottom">
+        <div class="nextBox">
+
+            <div class="nextText">
+                
+            </div>
+
+            <canvas d="nextCanvas"
+                    widthy
+                    gjhý<f></f>="90"
+                    height="90"></canvas>
+
+        </div>
+
+        <button class="newBtn"
+                onclick="restartGame()">
+            
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+/* =====================================================
+   BALL 2048
+   PHYSICS / CANVAS VERSION
+===================================================== */
+
+const canvas =
+    document.getElementById("gameCanvas");
+
+const ctx =
+    canvas.getContext("2d", {
+        alpha:false
+    });
+
+const nextCanvas =
+    document.getElementById("nextCanvas");
+
+const nextCtx =
+    nextCanvas.getContext("2d");
+
+
+const scoreEl =
+    document.getElementById("score");
+
+const bestEl =
+    document.getElementById("best");
+
+const gameOverEl =
+    document.getElementById("gameOver");
+
+const finalScoreEl =
+    document.getElementById("finalScore");
+
+
+/* =====================================================
+   CONSTANTS
+===================================================== */
+
+const WORLD_W = 420;
+const WORLD_H = 720;
+
+const WALL = 7;
+
+const DROP_Y = 75;
+
+const DANGER_Y = 92;
+
+const GRAVITY = 1450;
+
+const AIR_FRICTION = 0.999;
+
+const FLOOR_BOUNCE = 0.10;
+
+const BALL_BOUNCE = 0.08;
+
+const MAX_SPEED = 1500;
+
+const SOLVER_ITERATIONS = 5;
+
+
+/* =====================================================
+   GAME STATE
+===================================================== */
+
+let balls = [];
+
+let score = 0;
+
+let best =
+    Number(
+        localStorage.getItem("ball2048Best") || 0
+    );
+
+let currentValue = 2;
+
+let nextValue = 2;
+
+let dropping = false;
+
+let dropBall = null;
+
+let aimX = WORLD_W / 2;
+
+let gameEnded = false;
+
+let lastTime = performance.now();
+
+let mergeQueue = [];
+
+let particles = [];
+
+let popTexts = [];
+
+let shake = 0;
+
+let spawnTime = 0;
+
+
+/* =====================================================
+   VALUE DATA
+===================================================== */
+
+const colors = {
+
+    2:   ["#ffffff","#e7e8f0"],
+
+    4:   ["#ffe8a3","#ffc95c"],
+
+    8:   ["#b9f68a","#63cf42"],
+
+    16:  ["#75e5d8","#23b8b0"],
+
+    32:  ["#72c7ff","#368be8"],
+
+    64:  ["#a68cff","#7046d9"],
+
+    128: ["#ff91c3","#ed4f8b"],
+
+    256: ["#ffb56b","#f27b25"],
+
+    512: ["#ffe66c","#e3a900"],
+
+    1024:["#ff8bd5","#c83ee7"],
+
+    2048:["#a7f3ff","#00a9d8"]
+};
+
+
+/* =====================================================
+   RANDOM NEXT
+===================================================== */
+
+function randomValue(){
+
+    const roll = Math.random();
+
+    if(roll < .70)
+        return 2;
+
+    if(roll < .92)
+        return 4;
+
+    if(roll < .985)
+        return 8;
+
+    return 16;
+}
+
+
+/* =====================================================
+   BALL RADIUS
+===================================================== */
+
+function radiusFor(value){
+
+    /*
+       Small number = small ball
+       Bigger number = progressively bigger ball
+    */
+
+    const level =
+        Math.log2(value);
+
+    return Math.min(
+        58,
+        17 + level * 2.7
+    );
+}
+
+
+/* =====================================================
+   RESIZE
+===================================================== */
+
+function resize(){
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    const dpr =
+        Math.min(
+            window.devicePixelRatio || 1,
+            2
+        );
+
+    canvas.width =
+        Math.floor(
+            rect.width * dpr
+        );
+
+    canvas.height =
+        Math.floor(
+            rect.height * dpr
+        );
+
+    ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+    );
+
+    ctx.imageSmoothingEnabled = true;
+
+    renderNext();
+
+}
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+
+/* =====================================================
+   SCREEN -> WORLD
+===================================================== */
+
+function screenToWorldX(clientX){
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    const x =
+        (clientX - rect.left) /
+        rect.width;
+
+    return x * WORLD_W;
+}
+
+
+/* =====================================================
+   CURRENT BALL
+===================================================== */
+
+function createBall(value,x,y){
+
+    return {
+
+        x:x,
+
+        y:y,
+
+        vx:0,
+
+        vy:0,
+
+        value:value,
+
+        r:radiusFor(value),
+
+        active:true,
+
+        settled:false,
+
+        age:0,
+
+        scale:0.2,
+
+        rotation:
+            (Math.random()-.5)*.1,
+
+        mergeLock:0,
+
+        born:true
+    };
+}
+
+
+/* =====================================================
+   START GAME
+===================================================== */
+
+function restartGame(){
+
+    balls = [];
+
+    particles = [];
+
+    popTexts = [];
+
+    score = 0;
+
+    gameEnded = false;
+
+    dropping = false;
+
+    dropBall = null;
+
+    currentValue = randomValue();
+
+    nextValue = randomValue();
+
+    gameOverEl.classList.remove(
+        "show"
+    );
+
+    updateScore();
+
+    spawnCurrent();
+
+    lastTime =
+        performance.now();
+
+}
+
+
+/* =====================================================
+   SPAWN
+===================================================== */
+
+function spawnCurrent(){
+
+    if(gameEnded)
+        return;
+
+    currentValue = nextValue;
+
+    nextValue = randomValue();
+
+    aimX =
+        WORLD_W / 2;
+
+    dropBall =
+        createBall(
+            currentValue,
+            aimX,
+            DROP_Y
+        );
+
+    dropBall.vx = 0;
+
+    dropBall.vy = 0;
+
+    dropping = false;
+
+    spawnTime = 0;
+
+    renderNext();
+}
+
+
+/* =====================================================
+   RELEASE BALL
+===================================================== */
+
+function releaseBall(){
+
+    if(gameEnded)
+        return;
+
+    if(!dropBall)
+        return;
+
+    if(dropping)
+        return;
+
+    dropping = true;
+
+    dropBall.active = true;
+
+    dropBall.vy = 80;
+
+    balls.push(dropBall);
+
+    dropBall = null;
+
+    setTimeout(
+        spawnCurrent,
+        420
+    );
+}
+
+
+/* =====================================================
+   LIMIT AIM
+===================================================== */
+
+function updateAim(clientX){
+
+    if(gameEnded)
+        return;
+
+    if(dropping)
+        return;
+
+    const x =
+        screenToWorldX(clientX);
+
+    const r =
+        radiusFor(currentValue);
+
+    aimX =
+        Math.max(
+            WALL+r,
+            Math.min(
+                WORLD_W-WALL-r,
+                x
+            )
+        );
+
+    if(dropBall){
+
+        dropBall.x =
+            aimX;
+
+        dropBall.y =
+            DROP_Y;
+
+    }
+
+}
+
+
+/* =====================================================
+   POINTER
+===================================================== */
+
+let pointerDown = false;
+
+canvas.addEventListener(
+    "pointerdown",
+    e => {
+
+        pointerDown = true;
+
+        updateAim(e.clientX);
+
+    }
+);
+
+canvas.addEventListener(
+    "pointermove",
+    e => {
+
+        if(pointerDown)
+            updateAim(e.clientX);
+
+    }
+);
+
+canvas.addEventListener(
+    "pointerup",
+    e => {
+
+        if(!pointerDown)
+            return;
+
+        pointerDown = false;
+
+        updateAim(e.clientX);
+
+        releaseBall();
+
+    }
+);
+
+canvas.addEventListener(
+    "pointercancel",
+    () => {
+
+        pointerDown = false;
+
+    }
+);
+
+
+/* =====================================================
+   KEYBOARD
+===================================================== */
+
+document.addEventListener(
+    "keydown",
+    e => {
+
+        if(e.key === "ArrowLeft"){
+
+            aimX -= 20;
+
+            clampAim();
+
+        }
+
+        if(e.key === "ArrowRight"){
+
+            aimX += 20;
+
+            clampAim();
+
+        }
+
+        if(
+            e.key === " " ||
+            e.key === "Enter"
+        ){
+
+            releaseBall();
+
+        }
+
+    }
+);
+
+
+function clampAim(){
+
+    const r =
+        radiusFor(currentValue);
+
+    aimX =
+        Math.max(
+            WALL+r,
+            Math.min(
+                WORLD_W-WALL-r,
+                aimX
+            )
+        );
+
+    if(dropBall)
+        dropBall.x = aimX;
+}
+
+
+/* =====================================================
+   PHYSICS
+===================================================== */
+
+function physics(dt){
+
+    /*
+       Update balls
+    */
+
+    for(const b of balls){
+
+        b.age += dt;
+
+        if(b.mergeLock > 0)
+            b.mergeLock -= dt;
+
+        if(!b.active)
+            continue;
+
+        b.vy +=
+            GRAVITY * dt;
+
+        b.vx *=
+            Math.pow(
+                AIR_FRICTION,
+                dt*60
+            );
+
+        b.vy =
+            Math.min(
+                b.vy,
+                MAX_SPEED
+            );
+
+        b.x +=
+            b.vx * dt;
+
+        b.y +=
+            b.vy * dt;
+
+        /*
+           Wall collision
+        */
+
+        if(b.x-b.r < WALL){
+
+            b.x =
+                WALL+b.r;
+
+            b.vx =
+                Math.abs(b.vx) *
+                .25;
+
+        }
+
+        if(
+            b.x+b.r >
+            WORLD_W-WALL
+        ){
+
+            b.x =
+                WORLD_WALL();
+
+            b.vx =
+                -Math.abs(b.vx) *
+                .25;
+
+        }
+
+    }
+
+
+    /*
+       Solve collisions
+    */
+
+    for(
+        let iteration=0;
+        iteration<SOLVER_ITERATIONS;
+        iteration++
+    ){
+
+        for(let i=0;i<balls.length;i++){
+
+            const a =
+                balls[i];
+
+            if(!a.active)
+                continue;
+
+            for(
+                let j=i+1;
+                j<balls.length;
+                j++
+            ){
+
+                const b =
+                    balls[j];
+
+                if(!b.active)
+                    continue;
+
+                resolveCollision(
+                    a,
+                    b
+                );
+
+            }
+
+        }
+
+        solveFloor();
+
+    }
+
+
+    /*
+       Settle balls
+    */
+
+    for(const b of balls){
+
+        if(
+            Math.abs(b.vy) < 18 &&
+            b.y+b.r >= WORLD_H-12
+        ){
+
+            b.vy = 0;
+
+            b.settled = true;
+
+        }
+
+        if(
+            b.age > .35 &&
+            Math.abs(b.vx) < 4 &&
+            Math.abs(b.vy) < 8
+        ){
+
+            b.settled = true;
+
+        }
+
+    }
+
+
+    /*
+       Merge
+    */
+
+    processMerges();
+
+
+    /*
+       Remove dead balls
+    */
+
+    balls =
+        balls.filter(
+            b => b.active
+        );
+
+
+    /*
+       Danger check
+    */
+
+    checkGameOver();
+
+}
+
+
+/* =====================================================
+   WORLD WALL
+===================================================== */
+
+function WORLD_WALL(){
+
+    return WORLD_WALL_VALUE();
+
+}
+
+function WORLD_WALL_VALUE(){
+
+    return WORLD_W - WALL - 1;
+
+}
+
+
+/* =====================================================
+   FLOOR
+===================================================== */
+
+function solveFloor(){
+
+    for(const b of balls){
+
+        if(!b.active)
+            continue;
+
+        const floor =
+            WORLD_H - 9;
+
+        if(
+            b.y+b.r >
+            floor
+        ){
+
+            b.y =
+                floor-b.r;
+
+            if(b.vy > 0){
+
+                b.vy =
+                    -b.vy *
+                    FLOOR_BOUNCE;
+
+            }
+
+            b.vx *= .92;
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   BALL COLLISION
+===================================================== */
+
+function resolveCollision(a,b){
+
+    let dx =
+        b.x-a.x;
+
+    let dy =
+        b.y-a.y;
+
+    let distSq =
+        dx*dx+dy*dy;
+
+    const minDist =
+        a.r+b.r;
+
+    if(
+        distSq >=
+        minDist*minDist
+    )
+        return;
+
+    let dist =
+        Math.sqrt(distSq);
+
+    if(dist < .001){
+
+        dx = 0.01;
+
+        dy = 0;
+
+        dist = .01;
+
+    }
+
+    const nx =
+        dx/dist;
+
+    const ny =
+        dy/dist;
+
+    /*
+       Separate overlapping balls
+    */
+
+    const overlap =
+        minDist-dist;
+
+    const totalMass =
+        a.r*a.r +
+        b.r*b.r;
+
+    const moveA =
+        overlap *
+        (b.r*b.r) /
+        totalMass;
+
+    const moveB =
+        overlap *
+        (a.r*a.r) /
+        totalMass;
+
+    a.x -=
+        nx*moveA;
+
+    a.y -=
+        ny*moveA;
+
+    b.x +=
+        nx*moveB;
+
+    b.y +=
+        ny*moveB;
+
+
+    /*
+       Relative velocity
+    */
+
+    const rvx =
+        b.vx-a.vx;
+
+    const rvy =
+        b.vy-a.vy;
+
+    const velAlongNormal =
+        rvx*nx+
+        rvy*ny;
+
+    if(
+        velAlongNormal < 0
+    ){
+
+        const impulse =
+            -(1+BALL_BOUNCE) *
+            velAlongNormal /
+            (
+                1/(a.r*a.r) +
+                1/(b.r*b.r)
+            );
+
+        const ix =
+            impulse*nx;
+
+        const iy =
+            impulse*ny;
+
+        a.vx -=
+            ix/(a.r*a.r);
+
+        a.vy -=
+            iy/(a.r*a.r);
+
+        b.vx +=
+            ix/(b.r*b.r);
+
+        b.vy +=
+            iy/(b.r*b.r);
+
+    }
+
+
+    /*
+       Same values merge
+    */
+
+    if(
+        a.value === b.value &&
+        a.mergeLock <= 0 &&
+        b.mergeLock <= 0
+    ){
+
+        mergeQueue.push({
+            a:a,
+            b:b
+        });
+
+    }
+
+}
+
+
+/* =====================================================
+   MERGE PROCESS
+===================================================== */
+
+function processMerges(){
+
+    if(
+        mergeQueue.length === 0
+    )
+        return;
+
+    const pair =
+        mergeQueue.shift();
+
+    const a =
+        pair.a;
+
+    const b =
+        pair.b;
+
+    if(
+        !a.active ||
+        !b.active
+    )
+        return;
+
+    if(
+        a.value !== b.value
+    )
+        return;
+
+    const newValue =
+        a.value*2;
+
+    const x =
+        (a.x+b.x)/2;
+
+    const y =
+        (a.y+b.y)/2;
+
+    a.active = false;
+
+    b.active = false;
+
+    const merged =
+        createBall(
+            newValue,
+            x,
+            y
+        );
+
+    merged.vx =
+        (a.vx+b.vx)*.35;
+
+    merged.vy =
+        Math.min(
+            (a.vy+b.vy)*.35,
+            -40
+        );
+
+    merged.mergeLock =
+        .12;
+
+    merged.settled = false;
+
+    balls.push(merged);
+
+    score += newValue;
+
+    updateScore();
+
+    createParticles(
+        x,
+        y,
+        newValue
+    );
+
+    createText(
+        x,
+        y,
+        "+"+newValue
+    );
+
+    shake =
+        Math.min(
+            7,
+            shake +
+            Math.min(
+                4,
+                Math.log2(newValue)
+            )
+        );
+
+}
+
+
+/* =====================================================
+   SCORE
+===================================================== */
+
+function updateScore(){
+
+    scoreEl.textContent =
+        score.toLocaleString();
+
+    if(score > best){
+
+        best = score;
+
+        localStorage.setItem(
+            "ball2048Best",
+            best
+        );
+
+    }
+
+    bestEl.textContent =
+        best.toLocaleString();
+
+}
+
+
+/* =====================================================
+   PARTICLES
+===================================================== */
+
+function createParticles(
+    x,
+    y,
+    value
+){
+
+    const count =
+        Math.min(
+            22,
+            8+
+            Math.log2(value)*2
+        );
+
+    for(
+        let i=0;
+        i<count;
+        i++
+    ){
+
+        const angle =
+            Math.random()*
+            Math.PI*2;
+
+        const speed =
+            80+
+            Math.random()*180;
+
+        particles.push({
+
+            x:x,
+
+            y:y,
+
+            vx:
+                Math.cos(angle)*
+                speed,
+
+            vy:
+                Math.sin(angle)*
+                speed,
+
+            life:.5+
+                Math.random()*.35,
+
+            max:.85,
+
+            size:
+                2+
+                Math.random()*4,
+
+            value:value
+
+        });
+
+    }
+
+}
+
+
+/* =====================================================
+   FLOATING TEXT
+===================================================== */
+
+function createText(
+    x,
+    y,
+    text
+){
+
+    popTexts.push({
+
+        x:x,
+
+        y:y,
+
+        text:text,
+
+        life:.75,
+
+        max:.75
+
+    });
+
+}
+
+
+/* =====================================================
+   EFFECTS
+===================================================== */
+
+function updateEffects(dt){
+
+    for(const p of particles){
+
+        p.life -= dt;
+
+        p.vy +=
+            500*dt;
+
+        p.x +=
+            p.vx*dt;
+
+        p.y +=
+            p.vy*dt;
+
+    }
+
+    particles =
+        particles.filter(
+            p => p.life>0
+        );
+
+
+    for(const t of popTexts){
+
+        t.life -= dt;
+
+        t.y -=
+            45*dt;
+
+    }
+
+    popTexts =
+        popTexts.filter(
+            t => t.life>0
+        );
+
+
+    shake *=
+        Math.pow(
+            .02,
+            dt
+        );
+
+}
+
+
+/* =====================================================
+   GAME OVER
+===================================================== */
+
+function checkGameOver(){
+
+    if(gameEnded)
+        return;
+
+    /*
+       Ignore freshly dropped balls.
+    */
+
+    for(const b of balls){
+
+        if(
+            b.age < 1.1
+        )
+            continue;
+
+        if(
+            b.y-b.r <
+            DANGER_Y &&
+            Math.abs(b.vy)<100
+        ){
+
+            gameEnded = true;
+
+            finalScoreEl.textContent =
+                score.toLocaleString();
+
+            gameOverEl.classList.add(
+                "show"
+            );
+
+            return;
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   DRAW BACKGROUND
+===================================================== */
+
+function drawBackground(w,h){
+
+    const gradient =
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            h
+        );
+
+    gradient.addColorStop(
+        0,
+        "#f8f4ff"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#eee8fb"
+    );
+
+    ctx.fillStyle =
+        gradient;
+
+    ctx.fillRect(
+        0,
+        0,
+        w,
+        h
+    );
+
+
+    /*
+       Play field
+    */
+
+    const scale =
+        Math.min(
+            w/WORLD_W,
+            h/WORLD_H
+        );
+
+    const fieldW =
+        WORLD_W*scale;
+
+    const fieldH =
+        WORLD_H*scale;
+
+    const ox =
+        (w-fieldW)/2;
+
+    const oy =
+        (h-fieldH)/2;
+
+
+    ctx.save();
+
+    ctx.translate(
+        ox,
+        oy
+    );
+
+    ctx.scale(
+        scale,
+        scale
+    );
+
+
+    /*
+       Shadow
+    */
+
+    ctx.shadowColor =
+        "rgba(80,50,130,.12)";
+
+    ctx.shadowBlur =
+        25;
+
+    ctx.fillStyle =
+        "#ffffff";
+
+    roundRect(
+        0,
+        0,
+        WORLD_W,
+        WORLD_H,
+        25
+    );
+
+    ctx.fill();
+
+    ctx.shadowColor =
+        "transparent";
+
+
+    /*
+       Play area
+    */
+
+    ctx.fillStyle =
+        "#faf8ff";
+
+    roundRect(
+        WALL,
+        WALL,
+        WORLD_W-WALL*2,
+        WORLD_H-WALL*2,
+        20
+    );
+
+    ctx.fill();
+
+
+    /*
+       Danger line
+    */
+
+    ctx.save();
+
+    ctx.setLineDash([
+        8,
+        10
+    ]);
+
+    ctx.strokeStyle =
+        "rgba(239,68,68,.22)";
+
+    ctx.lineWidth =
+        2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        18,
+        DANGER_Y
+    );
+
+    ctx.lineTo(
+        WORLD_W-18,
+        DANGER_Y
+    );
+
+    ctx.stroke();
+
+    ctx.restore();
+
+
+    /*
+       Ground glow
+    */
+
+    const ground =
+        ctx.createLinearGradient(
+            0,
+            WORLD_H-90,
+            0,
+            WORLD_H
+        );
+
+    ground.addColorStop(
+        0,
+        "rgba(139,92,246,0)"
+    );
+
+    ground.addColorStop(
+        1,
+        "rgba(139,92,246,.10)"
+    );
+
+    ctx.fillStyle =
+        ground;
+
+    ctx.fillRect(
+        WALL,
+        WORLD_H-100,
+        WORLD_W-WALL*2,
+        100
+    );
+
+
+    ctx.restore();
+
+    return {
+        scale,
+        ox,
+        oy
+    };
+
+}
+
+
+/* =====================================================
+   ROUND RECT
+===================================================== */
+
+function roundRect(
+    x,
+    y,
+    w,
+    h,
+    r
+){
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x+r,
+        y
+    );
+
+    ctx.arcTo(
+        x+w,
+        y,
+        x+w,
+        y+h,
+        r
+    );
+
+    ctx.arcTo(
+        x+w,
+        y+h,
+        x,
+        y+h,
+        r
+    );
+
+    ctx.arcTo(
+        x,
+        y+h,
+        x,
+        y,
+        r
+    );
+
+    ctx.arcTo(
+        x,
+        y,
+        x+w,
+        y,
+        r
+    );
+
+    ctx.closePath();
+
+}
+
+
+/* =====================================================
+   DRAW BALL
+===================================================== */
+
+function drawBall(
+    b,
+    scale,
+    ox,
+    oy
+){
+
+    const x =
+        ox+b.x*scale;
+
+    const y =
+        oy+b.y*scale;
+
+    const r =
+        b.r*scale;
+
+    /*
+       Smooth spawn scale
+    */
+
+    b.scale +=
+        (1-b.scale)*.18;
+
+    const drawR =
+        r*b.scale;
+
+    const c =
+        colors[b.value] ||
+        ["#a78bfa","#6d28d9"];
+
+    /*
+       Shadow
+    */
+
+    ctx.save();
+
+    ctx.globalAlpha =
+        .20;
+
+    ctx.fillStyle =
+        "#4b3d68";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        x,
+        y+r*.72,
+        r*.72,
+        r*.20,
+        0,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+
+
+    /*
+       Ball gradient
+    */
+
+    const g =
+        ctx.createRadialGradient(
+            x-r*.32,
+            y-r*.38,
+            r*.08,
+            x,
+            y,
+            r
+        );
+
+    g.addColorStop(
+        0,
+        c[0]
+    );
+
+    g.addColorStop(
+        .55,
+        c[0]
+    );
+
+    g.addColorStop(
+        1,
+        c[1]
+    );
+
+
+    ctx.save();
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        drawR,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle =
+        g;
+
+    ctx.shadowColor =
+        "rgba(65,45,100,.16)";
+
+    ctx.shadowBlur =
+        8;
+
+    ctx.shadowOffsetY =
+        4;
+
+    ctx.fill();
+
+    ctx.shadowColor =
+        "transparent";
+
+
+    /*
+       Highlight
+    */
+
+    const highlight =
+        ctx.createRadialGradient(
+            x-r*.35,
+            y-r*.42,
+            0,
+            x-r*.35,
+            y-r*.42,
+            r*.48
+        );
+
+    highlight.addColorStop(
+        0,
+        "rgba(255,255,255,.75)"
+    );
+
+    highlight.addColorStop(
+        1,
+        "rgba(255,255,255,0)"
+    );
+
+    ctx.fillStyle =
+        highlight;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x-r*.27,
+        y-r*.30,
+        r*.40,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /*
+       Number
+    */
+
+    let fontSize =
+        r*.68;
+
+    if(b.value >= 100)
+        fontSize = r*.58;
+
+    if(b.value >= 1000)
+        fontSize = r*.48;
+
+    ctx.font =
+        "900 "+
+        Math.max(
+            10,
+            fontSize
+        )+
+        "px Arial";
+
+    ctx.textAlign =
+        "center";
+
+    ctx.textBaseline =
+        "middle";
+
+    ctx.lineWidth =
+        Math.max(
+            2,
+            r*.08
+        );
+
+    ctx.strokeStyle =
+        "rgba(70,45,100,.20)";
+
+    ctx.strokeText(
+        b.value,
+        x,
+        y+1
+    );
+
+    ctx.fillStyle =
+        b.value === 2
+        ? "#777481"
+        : "#ffffff";
+
+    ctx.fillText(
+        b.value,
+        x,
+        y+1
+    );
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   DRAW AIM
+===================================================== */
+
+function drawAim(
+    scale,
+    ox,
+    oy
+){
+
+    if(
+        gameEnded ||
+        !dropBall
+    )
+        return;
+
+    const r =
+        dropBall.r;
+
+    const x =
+        ox+aimX*scale;
+
+    const y =
+        oy+DROP_Y*scale;
+
+
+    /*
+       Aim line
+    */
+
+    ctx.save();
+
+    ctx.setLineDash([
+        5*scale,
+        8*scale
+    ]);
+
+    ctx.strokeStyle =
+        "rgba(139,92,246,.30)";
+
+    ctx.lineWidth =
+        2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x,
+        y+r*1.05
+    );
+
+    ctx.lineTo(
+        x,
+        oy+(WORLD_H-30)*scale
+    );
+
+    ctx.stroke();
+
+    ctx.restore();
+
+
+    /*
+       Drop ball
+    */
+
+    drawBall(
+        dropBall,
+        scale,
+        ox,
+        oy
+    );
+
+
+    /*
+       Small arrow
+    */
+
+    ctx.save();
+
+    ctx.fillStyle =
+        "rgba(139,92,246,.55)";
+
+    ctx.font =
+        "800 "+
+        Math.max(
+            11,
+            12*scale
+        )+
+        "px Arial";
+
+    ctx.textAlign =
+        "center";
+
+    ctx.fillText(
+        "DRAG TO AIM",
+        x,
+        oy+(DROP_Y-38)*scale
+    );
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   DRAW PARTICLES
+===================================================== */
+
+function drawParticles(
+    scale,
+    ox,
+    oy
+){
+
+    for(const p of particles){
+
+        const alpha =
+            Math.max(
+                0,
+                p.life/p.max
+            );
+
+        ctx.globalAlpha =
+            alpha;
+
+        ctx.fillStyle =
+            "#8b5cf6";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            ox+p.x*scale,
+            oy+p.y*scale,
+            p.size*scale,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+    }
+
+    ctx.globalAlpha = 1;
+
+
+    for(const t of popTexts){
+
+        const alpha =
+            Math.max(
+                0,
+                t.life/t.max
+            );
+
+        ctx.globalAlpha =
+            alpha;
+
+        ctx.fillStyle =
+            "#8b5cf6";
+
+        ctx.font =
+            "900 "+
+            (16*scale)+
+            "px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.fillText(
+            t.text,
+            ox+t.x*scale,
+            oy+t.y*scale
+        );
+
+    }
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* =====================================================
+   RENDER
+===================================================== */
+
+function render(){
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    const w =
+        rect.width;
+
+    const h =
+        rect.height;
+
+
+    ctx.clearRect(
+        0,
+        0,
+        w,
+        h
+    );
+
+
+    const world =
+        drawBackground(
+            w,
+            h
+        );
+
+
+    const scale =
+        world.scale;
+
+    const ox =
+        world.ox;
+
+    const oy =
+        world.oy;
+
+
+    /*
+       Screen shake
+    */
+
+    ctx.save();
+
+    if(shake > .1){
+
+        ctx.translate(
+            (Math.random()-.5)*shake,
+            (Math.random()-.5)*shake
+        );
+
+    }
+
+
+    /*
+       Balls sorted by Y
+    */
+
+    const sorted =
+        [...balls].sort(
+            (a,b) =>
+                a.y-b.y
+        );
+
+
+    for(const b of sorted){
+
+        if(!b.active)
+            continue;
+
+        drawBall(
+            b,
+            scale,
+            ox,
+            oy
+        );
+
+    }
+
+
+    drawAim(
+        scale,
+        ox,
+        oy
+    );
+
+
+    drawParticles(
+        scale,
+        ox,
+        oy
+    );
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   NEXT BALL
+===================================================== */
+
+function renderNext(){
+
+    const w =
+        nextCanvas.width;
+
+    const h =
+        nextCanvas.height;
+
+    nextCtx.clearRect(
+        0,
+        0,
+        w,
+        h
+    );
+
+    const r =
+        radiusFor(nextValue)*.55;
+
+    const c =
+        colors[nextValue] ||
+        ["#a78bfa","#6d28d9"];
+
+    const x =
+        w/2;
+
+    const y =
+        h/2;
+
+    const g =
+        nextCtx.createRadialGradient(
+            x-r*.35,
+            y-r*.4,
+            2,
+            x,
+            y,
+            r
+        );
+
+    g.addColorStop(
+        0,
+        c[0]
+    );
+
+    g.addColorStop(
+        1,
+        c[1]
+    );
+
+    nextCtx.beginPath();
+
+    nextCtx.arc(
+        x,
+        y,
+        r,
+        0,
+        Math.PI*2
+    );
+
+    nextCtx.fillStyle =
+        g;
+
+    nextCtx.shadowColor =
+        "rgba(80,50,120,.15)";
+
+    nextCtx.shadowBlur = 7;
+
+    nextCtx.fill();
+
+    nextCtx.shadowColor =
+        "transparent";
+
+    nextCtx.font =
+        "900 "+
+        Math.max(
+            12,
+            r*.70
+        )+
+        "px Arial";
+
+    nextCtx.textAlign =
+        "center";
+
+    nextCtx.textBaseline =
+        "middle";
+
+    nextCtx.fillStyle =
+        nextValue === 2
+        ? "#777481"
+        : "#ffffff";
+
+    nextCtx.fillText(
+        nextValue,
+        x,
+        y
+    );
+
+}
+
+
+/* =====================================================
+   GAME LOOP
+===================================================== */
+
+function gameLoop(now){
+
+    let dt =
+        (now-lastTime)/1000;
+
+    lastTime = now;
+
+    /*
+       Prevent huge physics jump
+       when tab/app pauses.
+    */
+
+    dt =
+        Math.min(
+            dt,
+            .022
+        );
+
+
+    if(!gameEnded){
+
+        physics(dt);
+
+    }
+
+    updateEffects(dt);
+
+    render();
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =====================================================
+   START
+===================================================== */
+
+resize();
+
+restartGame();
+
+requestAnimationFrame(
+    gameLoop
+);
+
+</script>
+
+</body>
+</html>

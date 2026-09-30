@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>2048 • Meethi Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-top:#ffd6e8;
+    --bg-bot:#c9b6f2;
+    --panel:#5b3d7a;
+    --panel-dark:#4a2f66;
+    --board:#6b4a8a;
+    --cell-empty:#7c5b9c;
+    --cream:#fff3e0;
+    --text-dark:#4a2f66;
+    --text-light:#fff8f0;
+    --accent-gold:#ffd166;
+    --accent-pink:#ff8fb1;
+    --success:#7ed99a;
+    shape-rendering:geometricPrecision;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family:'Quicksand', sans-serif;
+    background:
+      radial-gradient(120% 90% at 15% -10%, #ffe1ee 0%, transparent 55%),
+      radial-gradient(120% 90% at 100% 0%, #f0d9ff 0%, transparent 50%),
+      linear-gradient(160deg, var(--bg-top), var(--bg-bot) 70%);
+    color:var(--text-dark);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    min-height:100%;
+  }
+  .decor{
+    position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;
+  }
+  .decor span{
+    position:absolute; font-size:28px; opacity:.28;
+    animation:float 9s ease-in-out infinite;
+  }
+  @keyframes float{
+    0%,100%{transform:translateY(0) rotate(0deg);}
+    50%{transform:translateY(-22px) rotate(8deg);}
+  }
+  .wrap{
+    position:relative; z-index:1;
+    max-width:520px; margin:0 auto;
+    padding:22px 16px 40px;
+    min-height:100vh;
+  }
+  header{
+    text-align:center;
+    margin-bottom:14px;
+  }
+  .title{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size:clamp(34px, 9vw, 46px);
+    line-height:1;
+    letter-spacing:.5px;
+    background:linear-gradient(180deg, #fff3d6, var(--accent-gold) 55%, #ffb648 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow:0 3px 0 rgba(90,50,110,0.18);
+    margin:2px 0 2px;
+  }
+  .subtitle{
+    font-size:13px;
+    font-weight:600;
+    color:#7a5a9a;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+  }
+  .hud{
+    display:flex;
+    gap:10px;
+    margin:16px 0 20px;
+  }
+  .stat{
+    flex:1;
+    background:linear-gradient(160deg, var(--panel), var(--panel-dark));
+    border-radius:16px;
+    padding:12px 14px;
+    text-align:center;
+    box-shadow:0 5px 0 rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+    position:relative;
+    overflow:hidden;
+  }
+  .stat-label{
+    font-size:11px;
+    font-weight:700;
+    color:#d8c3f0;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-bottom:2px;
+  }
+  .stat-value{
+    font-family:'Baloo 2', sans-serif;
+    font-size:24px;
+    font-weight:700;
+    color:#fff;
+    transition:transform .15s ease;
+  }
+  .stat-value.bump{ transform:scale(1.25); }
+  .pill-btn{
+    border:none;
+    border-radius:14px;
+    padding:11px 26px;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    box-shadow:0 4px 0 rgba(0,0,0,0.15);
+    transition:transform .08s ease, box-shadow .08s ease;
+    color:var(--text-dark);
+    background:linear-gradient(160deg,#ffe08a,var(--accent-gold));
+  }
+  .pill-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.15); }
+
+  .board-outer{
+    position:relative;
+    background:linear-gradient(160deg, var(--panel), var(--panel-dark));
+    border-radius:22px;
+    padding:12px;
+    box-shadow:0 10px 0 rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.08);
+  }
+  .board{
+    position:relative;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    grid-template-rows:repeat(4, 1fr);
+    gap:10px;
+    aspect-ratio:1/1;
+    touch-action:none;
+    user-select:none;
+  }
+  .cell-bg{
+    background:var(--cell-empty);
+    border-radius:14px;
+  }
+  .tile-layer{
+    position:absolute; inset:0;
+  }
+  .tile{
+    position:absolute;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:14px;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    box-shadow:0 4px 0 rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.25);
+    transition:left .11s cubic-bezier(.2,.8,.3,1), top .11s cubic-bezier(.2,.8,.3,1);
+    will-change:left, top, transform;
+  }
+  .tile-inner{
+    animation:pop .16s ease-out;
+  }
+  @keyframes pop{
+    0%{ transform:scale(0.45); opacity:.4; }
+    70%{ transform:scale(1.08); }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .tile.merged .tile-inner{
+    animation:merge-pop .22s ease-out;
+  }
+  @keyframes merge-pop{
+    0%{ transform:scale(1); }
+    35%{ transform:scale(1.22); }
+    100%{ transform:scale(1); }
+  }
+
+  .overlay{
+    position:absolute; inset:0;
+    border-radius:16px;
+    background:rgba(74,47,102,0.82);
+    backdrop-filter:blur(2px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px;
+    text-align:center;
+    opacity:0; pointer-events:none;
+    transition:opacity .25s ease;
+    z-index:5;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .overlay h2{
+    font-family:'Baloo 2', sans-serif;
+    color:#fff;
+    font-size:30px;
+    margin:0;
+  }
+  .overlay p{
+    color:#e8d9fb;
+    font-size:14px;
+    margin:0 0 6px;
+    font-weight:600;
+  }
+  .overlay .pill-btn{ flex:none; padding:10px 26px; }
+
+  footer{
+    margin-top:18px;
+    text-align:center;
+    font-size:12px;
+    color:#7a5a9a;
+    font-weight:600;
+    line-height:1.6;
+  }
+  footer b{ color:#5b3d7a; }
+
+  @media (max-width:380px){
+    .stat-value{ font-size:20px; }
+    .title{ font-size:32px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="decor" id="decor"></div>
+
+<div class="wrap">
+  <header>
+    <div class="title">2048 CHALLENGE</div>
+  </header>
+
+  <div class="hud">
+    <div class="stat">
+      <div class="stat-label">Score</div>
+      <div class="stat-value" id="score">0</div>
+    </div>
+  </div>
+
+  <div class="board-outer">
+    <div class="board" id="board">
+      <!-- 16 background cells -->
+      <div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div>
+      <div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div>
+      <div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div>
+      <div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div><div class="cell-bg"></div>
+      <div class="tile-layer" id="tileLayer"></div>
+
+      <div class="overlay" id="overlay">
+        <h2 id="overlayTitle">Game Over!</h2>
+        <p id="overlaySub">Koi baat nahi, phir se try karo 💪</p>
+        <button class="pill-btn" id="overlayBtn">🔄 Phir Se Khelo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- decorative floating emoji ----------
+  var decor = document.getElementById('decor');
+  var emojis = ['✨','💗','🌸','⭐','💜'];
+  for(var i=0;i<10;i++){
+    var s = document.createElement('span');
+    s.textContent = emojis[i % emojis.length];
+    s.style.left = (Math.random()*95)+'%';
+    s.style.top = (Math.random()*95)+'%';
+    s.style.animationDelay = (Math.random()*6)+'s';
+    s.style.animationDuration = (7+Math.random()*5)+'s';
+    s.style.fontSize = (18+Math.random()*20)+'px';
+    decor.appendChild(s);
+  }
+
+  // ---------- sound engine (Web Audio, no files needed) ----------
+  var AudioCtx = window.AudioContext || window.webkitAudioContext;
+  var actx = null;
+  var soundOn = true; // sound is always on
+
+  function ensureCtx(){
+    if(!actx) actx = new AudioCtx();
+    if(actx.state === 'suspended') actx.resume();
+  }
+
+  function tone(freq, dur, type, gainVal, delay){
+    if(!soundOn) return;
+    ensureCtx();
+    var t0 = actx.currentTime + (delay||0);
+    var osc = actx.createOscillator();
+    var gain = actx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(gainVal||0.18, t0+0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(gain).connect(actx.destination);
+    osc.start(t0);
+    osc.stop(t0+dur+0.02);
+  }
+
+  function playMove(){ tone(320, 0.09, 'sine', 0.10); }
+  function playMerge(value){
+    // pitch rises with tile value for a satisfying escalation
+    var base = 260 + Math.min(Math.log2(value||2), 11) * 42;
+    tone(base, 0.14, 'triangle', 0.18);
+    tone(base*1.5, 0.14, 'sine', 0.10, 0.03);
+  }
+  function playSpawn(){ tone(520, 0.06, 'sine', 0.07); }
+  function playWin(){
+    [523,659,784,1047].forEach(function(f,i){ tone(f, 0.28, 'triangle', 0.16, i*0.11); });
+  }
+  function playGameOver(){
+    [400,330,260,180].forEach(function(f,i){ tone(f, 0.28, 'sawtooth', 0.10, i*0.09); });
+  }
+
+  // ---------- game state ----------
+  var SIZE = 4;
+  var grid; // grid[r][c] = {value, id} or null
+  var score = 0;
+  var uid = 1;
+  var gameOverFlag = false;
+  var wonFlag = false;
+  var keepPlaying = false;
+
+  var scoreEl = document.getElementById('score');
+  var tileLayer = document.getElementById('tileLayer');
+  var overlay = document.getElementById('overlay');
+  var overlayTitle = document.getElementById('overlayTitle');
+  var overlaySub = document.getElementById('overlaySub');
+
+  var tileColors = {
+    2:    ['#fff3e0', '#4a2f66'],
+    4:    ['#ffe3b0', '#4a2f66'],
+    8:    ['#ffb84d', '#ffffff'],
+    16:   ['#ff9d4d', '#ffffff'],
+    32:   ['#ff7a59', '#ffffff'],
+    64:   ['#ff5c5c', '#ffffff'],
+    128:  ['#ffd166', '#5b3d1a'],
+    256:  ['#ffc233', '#5b3d1a'],
+    512:  ['#ffb300', '#4a2f00'],
+    1024: ['#c77dff', '#ffffff'],
+    2048: ['#7b2cbf', '#ffffff'],
+    4096: ['#5b2fb0', '#ffffff']
+  };
+  function tileColor(v){
+    return tileColors[v] || ['#3a1e5c', '#ffffff'];
+  }
+  function fontSizeFor(v){
+    if(v < 100) return 34;
+    if(v < 1000) return 28;
+    return 22;
+  }
+
+  function emptyGrid(){
+    var g = [];
+    for(var r=0;r<SIZE;r++){ g.push([null,null,null,null]); }
+    return g;
+  }
+
+  function cellsAvailable(g){
+    var list = [];
+    for(var r=0;r<SIZE;r++) for(var c=0;c<SIZE;c++) if(!g[r][c]) list.push([r,c]);
+    return list;
+  }
+
+  function addRandomTile(g, animate){
+    var avail = cellsAvailable(g);
+    if(avail.length === 0) return null;
+    var pick = avail[Math.floor(Math.random()*avail.length)];
+    var value = Math.random() < 0.9 ? 2 : 4;
+    var tile = {value:value, id:uid++, isNew:true};
+    g[pick[0]][pick[1]] = tile;
+    if(animate !== false) playSpawn();
+    return tile;
+  }
+
+  function startGame(){
+    grid = emptyGrid();
+    score = 0;
+    gameOverFlag = false;
+    wonFlag = false;
+    keepPlaying = false;
+    overlay.classList.remove('show');
+    updateScore(0, true);
+    addRandomTile(grid, false);
+    addRandomTile(grid, false);
+    render(true);
+  }
+
+  function updateScore(delta, reset){
+    score = reset ? 0 : score + delta;
+    scoreEl.textContent = score;
+    if(delta && delta > 0){
+      scoreEl.classList.remove('bump');
+      void scoreEl.offsetWidth;
+      scoreEl.classList.add('bump');
+    }
+  }
+
+  // ---------- rendering ----------
+  function render(instant){
+    tileLayer.innerHTML = '';
+    var rect = tileLayer.getBoundingClientRect();
+    var gap = 10;
+    var cellSize = (rect.width - gap*3) / 4;
+
+    for(var r=0;r<SIZE;r++){
+      for(var c=0;c<SIZE;c++){
+        var t = grid[r][c];
+        if(!t) continue;
+        var el = document.createElement('div');
+        el.className = 'tile';
+        var colors = tileColor(t.value);
+        el.style.width = cellSize+'px';
+        el.style.height = cellSize+'px';
+        el.style.left = (c*(cellSize+gap))+'px';
+        el.style.top = (r*(cellSize+gap))+'px';
+        el.style.background = colors[0];
+        el.style.color = colors[1];
+        el.style.fontSize = fontSizeFor(t.value)+'px';
+        if(instant){ el.style.transition = 'none'; }
+
+        var inner = document.createElement('div');
+        inner.className = 'tile-inner';
+        inner.textContent = t.value;
+        el.appendChild(inner);
+
+        if(t.justMerged) el.classList.add('merged');
+
+        tileLayer.appendChild(el);
+      }
+    }
+  }
+
+  // ---------- move logic ----------
+  function cloneGridShallow(g){
+    return g.map(function(row){ return row.slice(); });
+  }
+
+  function gridsEqual(a,b){
+    for(var r=0;r<SIZE;r++) for(var c=0;c<SIZE;c++){
+      var ta=a[r][c], tb=b[r][c];
+      if((ta?ta.value:null) !== (tb?tb.value:null)) return false;
+    }
+    return true;
+  }
+
+  function move(direction){
+    if(gameOverFlag || overlay.classList.contains('show')) return;
+    // direction: 'up','down','left','right'
+    var moved = false;
+    var gainedScore = 0;
+    var mergedAny = false;
+    var maxMergedValue = 0;
+
+    var before = cloneGridShallow(grid);
+
+    function traverseOrder(){
+      var rows = [0,1,2,3], cols = [0,1,2,3];
+      if(direction === 'down') rows = rows.slice().reverse();
+      if(direction === 'right') cols = cols.slice().reverse();
+      return {rows:rows, cols:cols};
+    }
+
+    // clear merged flags
+    for(var r=0;r<SIZE;r++) for(var c=0;c<SIZE;c++){ if(grid[r][c]) grid[r][c].justMerged=false; }
+
+    var order = traverseOrder();
+
+    function vector(){
+      if(direction==='up') return [-1,0];
+      if(direction==='down') return [1,0];
+      if(direction==='left') return [0,-1];
+      return [0,1];
+    }
+    var vec = vector();
+
+    function withinBounds(r,c){ return r>=0 && r<SIZE && c>=0 && c<SIZE; }
+
+    order.rows.forEach(function(r){
+      order.cols.forEach(function(c){
+        var tile = grid[r][c];
+        if(!tile) return;
+        var curR=r, curC=c;
+        var farthestR=r, farthestC=c;
+        // find farthest empty cell
+        while(true){
+          var nr = curR+vec[0], nc = curC+vec[1];
+          if(!withinBounds(nr,nc) || grid[nr][nc]) break;
+          farthestR=nr; farthestC=nc; curR=nr; curC=nc;
+        }
+        var nextR = farthestR+vec[0], nextC = farthestC+vec[1];
+        var nextTile = withinBounds(nextR,nextC) ? grid[nextR][nextC] : null;
+
+        if(nextTile && nextTile.value === tile.value && !nextTile.justMerged && !nextTile.mergedFrom){
+          // merge
+          grid[r][c] = null;
+          var newValue = tile.value*2;
+          nextTile.value = newValue;
+          nextTile.justMerged = true;
+          nextTile.mergedFrom = true;
+          gainedScore += newValue;
+          mergedAny = true;
+          maxMergedValue = Math.max(maxMergedValue, newValue);
+          moved = true;
+          if(newValue === 2048 && !wonFlag) wonFlag = true;
+        } else {
+          if(farthestR !== r || farthestC !== c){
+            grid[farthestR][farthestC] = tile;
+            grid[r][c] = null;
+            moved = true;
+          }
+        }
+      });
+    });
+
+    // reset mergedFrom flags for next turn
+    for(var r2=0;r2<SIZE;r2++) for(var c2=0;c2<SIZE;c2++){ if(grid[r2][c2]) grid[r2][c2].mergedFrom=false; }
+
+    if(!moved){ return; }
+
+    render(false);
+    updateScore(gainedScore, false);
+
+    if(mergedAny) playMerge(maxMergedValue); else playMove();
+
+    setTimeout(function(){
+      addRandomTile(grid, true);
+      render(false);
+      checkGameState();
+    }, 110);
+  }
+
+  function canMove(g){
+    if(cellsAvailable(g).length > 0) return true;
+    for(var r=0;r<SIZE;r++){
+      for(var c=0;c<SIZE;c++){
+        var v = g[r][c].value;
+        if(c<SIZE-1 && g[r][c+1] && g[r][c+1].value===v) return true;
+        if(r<SIZE-1 && g[r+1][c] && g[r+1][c].value===v) return true;
+      }
+    }
+    return false;
+  }
+
+  function checkGameState(){
+    if(wonFlag && !keepPlaying){
+      showOverlay(true);
+      playWin();
+      return;
+    }
+    if(!canMove(grid)){
+      gameOverFlag = true;
+      showOverlay(false);
+      playGameOver();
+    }
+  }
+
+  function showOverlay(won){
+    if(won){
+      overlayTitle.textContent = '🎉 Aapne Jeet Liya! 🎉';
+      overlaySub.textContent = '2048 ban gaya! Aage khelna hai?';
+      overlay.querySelector('#overlayBtn').textContent = '➡️ Aage Khelo';
+    } else {
+      overlayTitle.textContent = 'Game Over 😅';
+      overlaySub.textContent = 'Score: ' + score + ' — phir se try karo!';
+      overlay.querySelector('#overlayBtn').textContent = '🔄 Phir Se Khelo';
+    }
+    overlay.classList.add('show');
+  }
+
+  document.getElementById('overlayBtn').addEventListener('click', function(){
+    if(wonFlag && !gameOverFlag){
+      keepPlaying = true;
+      overlay.classList.remove('show');
+    } else {
+      startGame();
+    }
+  });
+
+  // ---------- input: keyboard ----------
+  window.addEventListener('keydown', function(e){
+    var map = {ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
+               w:'up', s:'down', a:'left', d:'right'};
+    if(map[e.key]){
+      e.preventDefault();
+      ensureCtx();
+      move(map[e.key]);
+    }
+  });
+
+  // ---------- input: touch swipe ----------
+  var boardEl = document.getElementById('board');
+  var touchStartX=0, touchStartY=0, touchActive=false;
+
+  boardEl.addEventListener('touchstart', function(e){
+    if(e.touches.length !== 1) return;
+    touchActive = true;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    ensureCtx();
+  }, {passive:true});
+
+  boardEl.addEventListener('touchend', function(e){
+    if(!touchActive) return;
+    touchActive = false;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    var absX = Math.abs(dx), absY = Math.abs(dy);
+    var threshold = 24;
+    if(Math.max(absX,absY) < threshold) return;
+    if(absX > absY){
+      move(dx > 0 ? 'right' : 'left');
+    } else {
+      move(dy > 0 ? 'down' : 'up');
+    }
+  }, {passive:true});
+
+  boardEl.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passive:false});
+
+  // ---------- resize ----------
+  window.addEventListener('resize', function(){ render(true); });
+
+  // ---------- init ----------
+  startGame();
+
+})();
+</script>
+</body>
+</html>
