@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10XLionZ: Games</title>
+    <style>
+        /* प्रीमियम डार्क थीम */
+        body {
+            margin: 0;
+            padding: 15px 0 40px 0;
+            background-color: #0f1014;
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* प्ले स्टोर जैसा सर्च बार */
+        .search-container {
+            width: 90%;
+            max-width: 450px;
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 14px 20px;
+            box-sizing: border-box;
+            background-color: #1e1f24;
+            border: 1px solid #2f3036;
+            border-radius: 28px;
+            color: #ffffff;
+            font-size: 16px;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+
+        .search-bar:focus {
+            background-color: #282930;
+            border-color: #00a676;
+        }
+
+        /* हर सेक्शन का टाइटल */
+        .section-title {
+            width: 90%;
+            max-width: 450px;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 25px 0 12px 0;
+            color: #e8eaed;
+            letter-spacing: 0.5px;
+        }
+
+        /* ==========================================
+           1. HERO SPOTLIGHT LAYOUT (बड़ा बैनर)
+           ========================================== */
+        .hero-banner {
+            width: 90%;
+            max-width: 450px;
+            height: 160px;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            text-decoration: none;
+            display: block;
+            transition: transform 0.2s;
+        }
+        
+        .hero-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            padding: 15px;
+        }
+
+        /* ==========================================
+           2. HORIZONTAL SCROLL GRID (लेफ्ट-टू-राइट)
+           ========================================== */
+        .scroll-grid {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+            overflow-x: auto;
+            padding: 4px 5%;
+            box-sizing: border-box;
+        }
+
+        /* स्क्रॉलबार छुपाने के लिए */
+        .scroll-grid::-webkit-scrollbar { display: none; }
+
+        .scroll-item {
+            flex: 0 0 85px; /* हर आइटम की फिक्स्ड चौड़ाई */
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        /* ==========================================
+           3. 3-COLUMN SQUARE GRID (परफेक्ट 3 कॉलम)
+           ========================================== */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px 16px;
+            width: 90%;
+            max-width: 450px;
+        }
+
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s;
+        }
+
+        /* ==========================================
+           कॉमन कॉम्पोनेंट स्टाइल्स (स्क्वायर आइकॉन)
+           ========================================== */
+        .square-icon {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* इमेज को हमेशा परफेक्ट स्क्वायर रखेगा */
+            object-fit: cover;
+            border-radius: 22px; /* Smooth Play Store Corners */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            background-color: #1e1f24;
+        }
+
+        .app-title {
+            margin-top: 8px;
+            font-size: 12px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+            color: #bdc1c6;
+        }
+
+        /* होवर और टच एनिमेशन इफेक्ट्स */
+        .hero-banner:hover, .scroll-item:hover, .grid-item:hover {
+            transform: scale(1.04);
+        }
+        .hero-banner:active, .scroll-item:active, .grid-item:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- सर्च बार -->
+    <div class="search-container">
+        <input type="text" id="search" class="search-bar" placeholder="गेम्स या ऐप्स खोजें...">
+    </div>
+
+    <!-- 1. Hero Spotlight -->
+    <div class="section-title">Featured Game</div>
+    <a href="2048ball.html" class="hero-banner" data-name="2048 ball">
+        <img src="game.png" alt="Featured Game" class="hero-img">
+        <div class="hero-overlay">
+            <b style="font-size: 16px; color: #ffffff;">2048 Ball 3D</b>
+            <div style="font-size: 12px; color: #00a676; margin-top: 3px;">★ 4.9 | Action & Fun</div>
+        </div>
+    </a>
+
+    <!-- 2. Trending Now (Horizontal Scroll) -->
+    <div class="section-title">Trending Now</div>
+    <div class="scroll-grid">
+        <a href="2048tile.html" class="scroll-item" data-name="2048 tile">
+            <img src="2048tile.png" alt="2048 Tile" class="square-icon">
+            <div class="app-title">2048 Tile</div>
+        </a>
+        <a href="2048ball.html" class="scroll-item" data-name="2048 ball">
+            <img src="2048ball.png" alt="2048 Ball" class="square-icon">
+            <div class="app-title">2048 Ball</div>
+        </a>
+        <!-- आप यहाँ इसी तरह और भी आइटम्स जोड़कर राइट साइड में स्क्रॉल बढ़ा सकते हैं -->
+    </div>
+
+    <!-- 3. Top Collections (3-Column Grid) -->
+    <div class="section-title">Top Collections</div>
+    <div class="app-grid" id="gameGrid">
+
+        <a href="2048ball.html" class="grid-item" data-name="2048 ball">
+            <img src="2048ball.png" alt="2048 Ball" class="square-icon">
+            <div class="app-title">2048 Ball</div>
+        </a>
+
+        <a href="2048tile.html" class="grid-item" data-name="2048 tile">
+            <img src="2048tile.png" alt="2048 Tile" class="square-icon">
+            <div class="app-title">2048 Tile</div>
+        </a>
+
+        <!-- नया गेम आने तक के लिए खाली / डेमो स्लॉट -->
+        <a href="#" class="grid-item" data-name="coming soon">
+            <div class="square-icon" style="display:flex; align-items:center; justify-content:center; background:#1e1f24; color:#555961; font-size: 24px;">🎮</div>
+            <div class="app-title">Coming Soon</div>
+        </a>
+
+    </div>
+
+    <!-- स्मार्ट लाइव सर्च स्क्रिप्ट -->
+    <script>
+        document.getElementById('search').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const items = document.querySelectorAll('.hero-banner, .scroll-item, .grid-item');
+            
+            items.forEach(item => {
+                const name = item.getAttribute('data-name');
+                if(name) {
+                    if (name.includes(query)) {
+                        // एलिमेंट को उसकी मूल स्टाइल के हिसाब से दिखाना
+                        if(item.classList.contains('hero-banner')) item.style.display = 'block';
+                        else item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
